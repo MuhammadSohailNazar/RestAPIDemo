@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Tweetbook.Contracts.V1;
 using Tweetbook.Contracts.V1.Request;
 using Tweetbook.Contracts.V1.Response;
@@ -20,15 +21,15 @@ namespace Tweetbook.Controllers.V1
         }
 
         [HttpGet(ApiRoutes.Posts.GelAll)]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            return Ok( _postService.GetPosts());
+            return Ok(await _postService.GetPostsAsync());
         }
 
         [HttpDelete(ApiRoutes.Posts.Delete)]
-        public IActionResult Delete([FromRoute] Guid postId)
+        public async Task<IActionResult> Delete([FromRoute] Guid postId)
         {
-            var deleted = _postService.DeletePost(postId);
+            var deleted = await _postService.DeletePostAsync(postId);
 
             if (deleted)
                 return NoContent();
@@ -36,7 +37,7 @@ namespace Tweetbook.Controllers.V1
         }
 
         [HttpPut(ApiRoutes.Posts.Update)]
-        public IActionResult Get([FromRoute] Guid postId, UpdatePostRequest request )
+        public async Task<IActionResult> Get([FromRoute] Guid postId, UpdatePostRequest request)
         {
             var post = new Post
             {
@@ -44,20 +45,20 @@ namespace Tweetbook.Controllers.V1
                 Name = request.Name
             };
 
-            var updated = _postService.UpdatePost(post);
+            var updated = await _postService.UpdatePostAsync(post);
 
-            if(updated)
-               return Ok(post);
+            if (updated)
+                return Ok(post);
 
             return NotFound("Post not found.");
         }
 
         [HttpGet(ApiRoutes.Posts.Get)]
-        public IActionResult Get([FromRoute] Guid postId)
+        public async Task<IActionResult> Get([FromRoute] Guid postId)
         {
-            var post = _postService.GetPostById(postId);
+            var post = await _postService.GetPostByIdAsync(postId);
 
-            if(post == null)
+            if (post == null)
             {
                 return NotFound("Post not found.");
             }
@@ -65,13 +66,11 @@ namespace Tweetbook.Controllers.V1
         }
 
         [HttpPost(ApiRoutes.Posts.Create)]
-        public IActionResult Create([FromBody] CreatePostRequest postRequest)
+        public async Task<IActionResult> Create([FromBody] CreatePostRequest postRequest)
         {
-            var post = new Post { Id = postRequest.Id };
-            if (post.Id != Guid.Empty)
-                post.Id = Guid.NewGuid();
+            var post = new Post { Name = postRequest.Name };
 
-            _postService.GetPosts().Add(post);
+            await _postService.CreatePostAsync(post);
 
             var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.ToUriComponent()}";
             var locationUrl = baseUrl + "/" + ApiRoutes.Posts.Get.Replace("{postId}", post.Id.ToString());
